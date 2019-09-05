@@ -144,22 +144,18 @@ The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
 
 
-SELECT * 
+SELECT fb.facilities_name,
+       SUM(fb.cost) AS revenue 
     FROM (
-      SELECT f.name AS facilities_name, 
-             CASE WHEN b.users_category =  'guest' THEN b.total_slots * f.guestcost
-             ELSE b.total_slots * f.membercost END AS total_revenue
-         FROM (
-             SELECT facid, 
-                    CASE WHEN memid =0 THEN  'guest'
-                    ELSE  'member' END AS users_category, 
-                    SUM( slots ) AS total_slots
-                 FROM Bookings
-                 GROUP BY 1 , 2
-               ) AS b
-        JOIN Facilities f ON b.facid = f.facid
-        GROUP BY 1
-         ) AS final
-WHERE final.total_revenue <1000
-ORDER BY final.total_revenue
+      SELECT f.name AS facilities_name,
+             b.memid,
+             CASE WHEN b.memid =0 THEN b.slots * f.guestcost
+             ELSE b.slots * f.membercost  END AS cost
+             FROM  Bookings  b
+             JOIN Facilities  f ON b.facid = f.facid
+      ) AS fb
+   JOIN Members m ON m.memid = fb.memid
+  GROUP BY 1
+  HAVING revenue <1000
+  ORDER BY revenue
 
